@@ -292,10 +292,7 @@ echo "rootfs               /                    auto       nodev,noatime,discard
 echo "/dev/disk/by-partlabel/boot     /boot       auto    noauto,comment=systemd.automount,nosuid,nodev,noatime,discard     1   1" >> $ROOTDIR/etc/fstab
 
 ## Clean up
-#umount -l -f $ROOTDIR/sys
 ## Kill remaining processes making use of the /proc before unmounting it
-#lsof | grep $ROOTDIR/proc | awk '{print $2}' | xargs kill -9
-#umount -l -f $ROOTDIR/proc
 
 cat << EOF > $ROOTDIR/cleanup
 #!/bin/bash
@@ -313,27 +310,29 @@ LANG=C chroot $ROOTDIR /cleanup
 
 rm -rf $ROOTDIR/tmp/deb
 
+umount -l -f $ROOTDIR/sys
+lsof | grep $ROOTDIR/proc | awk '{print $2}' | xargs kill -9
 umount $ROOTDIR/proc/sys/fs/binfmt_misc
 umount $ROOTDIR/dev/pts
 umount $ROOTDIR/dev/
-umount $ROOTDIR/proc
+#umount $ROOTDIR/proc
+umount -l -f $ROOTDIR/proc
 
-## Create the rootfs ext4 image
-#rm edison-image-edison.ext4
-#fsize=$((`stat --printf="%s" toFlash/edison-image-edison.ext4` / 524288))
-#dd if=/dev/zero of=edison-image-edison.ext4 bs=512K count=$fsize
-#mkfs.ext4 -F -L rootfs edison-image-edison.ext4
-#
-## Copy the rootfs content in the ext4 image
-#rm -rf tmpext4
-#mkdir tmpext4
-#mount -o loop edison-image-edison.ext4 tmpext4
-#cp -a $ROOTDIR/* tmpext4/
-#umount tmpext4
-#rmdir tmpext4
-#
-#cp edison-image-edison.ext4 toFlash/
-## Make sure that non-root users can read write the flash files
-## This seems to fix a strange flashing issue in some cases
-#chmod -R a+rw toFlash
+# Create the rootfs ext4 image
+rm edison-image-edison.ext4
+fsize=$((`stat --printf="%s" toFlash/edison-image-edison.ext4` / 524288))
+dd if=/dev/zero of=edison-image-edison.ext4 bs=512K count=$fsize
+mkfs.ext4 -F -L rootfs edison-image-edison.ext4
 
+# Copy the rootfs content in the ext4 image
+rm -rf tmpext4
+mkdir tmpext4
+mount -o loop edison-image-edison.ext4 tmpext4
+cp -a $ROOTDIR/* tmpext4/
+umount tmpext4
+rmdir tmpext4
+
+cp edison-image-edison.ext4 toFlash/
+# Make sure that non-root users can read write the flash files
+# This seems to fix a strange flashing issue in some cases
+chmod -R a+rw toFlash
