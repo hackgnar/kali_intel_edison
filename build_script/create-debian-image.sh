@@ -94,9 +94,33 @@ fi
 
 mkdir -p $ROOTDIR/home/root
 
-#mount sysfs $ROOTDIR/sys -t sysfs
-#mount proc $ROOTDIR/proc -t proc
-#
+mount sysfs $ROOTDIR/sys -t sysfs
+mount proc $ROOTDIR/proc -t proc
+
+cat << EOF > $ROOTDIR/etc/network/interfaces
+auto lo
+iface lo inet loopback
+EOF
+
+cat << EOF > $ROOTDIR/etc/resolv.conf
+nameserver 8.8.8.8
+EOF
+
+cat << EOF > $ROOTDIR/etc/apt/sources.list
+deb http://http.kali.org/kali kali-rolling main contrib non-free
+EOF
+
+echo "kali" > $ROOTDIR/etc/hostname
+
+cat << EOF > $ROOTDIR/etc/hosts
+127.0.0.1       kali    localhost
+::1             localhost ip6-localhost ip6-loopback
+fe00::0         ip6-localnet
+ff00::0         ip6-mcastprefix
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+EOF
+
 ## Backup config
 #cp $ROOTDIR/etc/environment $ROOTDIR/etc/environment.sav
 #cp $ROOTDIR/etc/resolv.conf $ROOTDIR/etc/resolv.conf.sav
@@ -109,16 +133,17 @@ mkdir -p $ROOTDIR/home/root
 #echo `export | grep HTTPS_PROXY | sed 's/declare -x HTTPS_PROXY=/Acquire::https::proxy /'`\;  >> $ROOTDIR/etc/apt/apt.conf.d/50proxy
 #cp /etc/resolv.conf $ROOTDIR/etc/resolv.conf
 #cp /etc/hosts $ROOTDIR/etc/hosts
-#
-#CHROOTCMD="eval LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTDIR"
-#
-## Install necessary packages
-#$CHROOTCMD apt-get clean
-#$CHROOTCMD apt-get update
-#$CHROOTCMD apt-get -y --force-yes install dbus nano openssh-server sudo bash-completion dosfstools
-#$CHROOTCMD apt-get -y --force-yes install bluez hostapd file ethtool network-manager
-#$CHROOTCMD apt-get -y --force-yes install python
-#
+
+CHROOTCMD="eval LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTDIR"
+
+# Install necessary packages
+echo "CLEAN AND INSTALL"
+$CHROOTCMD apt-get clean
+$CHROOTCMD apt-get update
+$CHROOTCMD apt-get -y --force-yes install dbus nano openssh-server sudo bash-completion dosfstools
+$CHROOTCMD apt-get -y --force-yes install bluez hostapd file ethtool network-manager
+$CHROOTCMD apt-get -y --force-yes install python
+
 ## This service is added by the network-manager debian package but we don't want it activated
 ## as it causes an UART console corruption at boot
 #$CHROOTCMD rm /etc/systemd/system/multi-user.target.wants/ModemManager.service /etc/systemd/system/dbus-org.freedesktop.ModemManager1.service
