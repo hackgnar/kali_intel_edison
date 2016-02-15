@@ -129,6 +129,56 @@ ff02::1         ip6-allnodes
 ff02::2         ip6-allrouters
 EOF
 
+cat << EOF > $ROOTDIR/debconf.set
+console-common console-data/keymap/policy select Select keymap from full list
+console-common console-data/keymap/full select en-latin1-nodeadkeys
+EOF
+
+
+cat << EOF > $ROOTDIR/third-stage
+#!/bin/bash
+dpkg-divert --add --local --divert /usr/sbin/invoke-rc.d.chroot --rename /usr/sbin/invoke-rc.d
+cp /bin/true /usr/sbin/invoke-rc.d
+echo -e "#!/bin/sh\nexit 101" > /usr/sbin/policy-rc.d
+chmod +x /usr/sbin/policy-rc.d
+
+apt-get update
+apt-get --yes --force-yes install locales-all
+
+debconf-set-selections /debconf.set
+rm -f /debconf.set
+apt-get update
+apt-get -y install git-core binutils ca-certificates initramfs-tools u-boot-tools
+apt-get -y install locales console-common less nano git
+echo "root:toor" | chpasswd
+sed -i -e 's/KERNEL\!=\"eth\*|/KERNEL\!=\"/' /lib/udev/rules.d/75-persistent-net-generator.rules
+rm -f /etc/udev/rules.d/70-persistent-net.rules
+export DEBIAN_FRONTEND=noninteractive
+#apt-get --yes --force-yes install $packages
+apt-get --yes --force-yes dist-upgrade
+apt-get --yes --force-yes autoremove
+
+rm -f /usr/sbin/policy-rc.d
+rm -f /usr/sbin/invoke-rc.d
+dpkg-divert --remove --rename /usr/sbin/invoke-rc.d
+
+rm -f /third-stage
+EOF
+
+chmod +x $ROOTDIR/third-stage
+LANG=C chroot $ROOTDIR /third-stage
+
+cat << EOF > kali-$architecture/cleanup
+#!/bin/bash
+rm -rf /root/.bash_history
+apt-get update
+apt-get clean
+rm -f /0
+rm -f /hs_err*
+rm -f cleanup
+rm -f /usr/bin/qemu*
+EOF
+
 ## Backup config
 #cp $ROOTDIR/etc/environment $ROOTDIR/etc/environment.sav
 #cp $ROOTDIR/etc/resolv.conf $ROOTDIR/etc/resolv.conf.sav
@@ -142,15 +192,15 @@ EOF
 #cp /etc/resolv.conf $ROOTDIR/etc/resolv.conf
 #cp /etc/hosts $ROOTDIR/etc/hosts
 
-CHROOTCMD="eval LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTDIR"
-
-# Install necessary packages
-echo "CLEAN AND INSTALL"
-$CHROOTCMD apt-get clean
-$CHROOTCMD apt-get update
-$CHROOTCMD apt-get -y --force-yes install dbus nano openssh-server sudo bash-completion dosfstools
-$CHROOTCMD apt-get -y --force-yes install bluez hostapd file ethtool network-manager
-$CHROOTCMD apt-get -y --force-yes install python
+#CHROOTCMD="eval LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTDIR"
+#
+## Install necessary packages
+#echo "CLEAN AND INSTALL"
+#$CHROOTCMD apt-get clean
+#$CHROOTCMD apt-get update
+#$CHROOTCMD apt-get -y --force-yes install dbus nano openssh-server sudo bash-completion dosfstools
+#$CHROOTCMD apt-get -y --force-yes install bluez hostapd file ethtool network-manager
+#$CHROOTCMD apt-get -y --force-yes install python
 
 ## This service is added by the network-manager debian package but we don't want it activated
 ## as it causes an UART console corruption at boot
