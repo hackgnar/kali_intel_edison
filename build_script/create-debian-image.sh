@@ -89,7 +89,8 @@ if [ "$skip_debootstrap" != "true" ]; then
   mkdir $ROOTDIR
   #EDIT change to kali debootstrap
   #debootstrap --arch i386 --no-check-gpg jessie $ROOTDIR http://http.debian.net/debian/
-  debootstrap --arch i386 --no-check-gpg --include=vim-nox,openssh-server,ntpdate,less,wireless-tools,wpasupplicant,dnsmasq,psmisc,locales,locales-all,screen --exclude=nano kali $ROOTDIR http://archive.kali.org/kali
+  #debootstrap --arch i386 --no-check-gpg --include=vim-nox,openssh-server,ntpdate,less,wireless-tools,wpasupplicant,dnsmasq,psmisc,locales,locales-all,screen --exclude=nano kali $ROOTDIR http://archive.kali.org/kali
+  debootstrap --arch i386 --no-check-gpg --foreign kali-rolling $ROOTDIR http://http.kali.org/kali
 fi
 
 mkdir -p $ROOTDIR/home/root
