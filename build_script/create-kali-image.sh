@@ -188,6 +188,9 @@ $CHROOTCMD apt-get clean
 $CHROOTCMD apt-get update
 $CHROOTCMD apt-get -y --force-yes install dbus nano openssh-server sudo bash-completion dosfstools
 $CHROOTCMD apt-get -y --force-yes install bluez hostapd file ethtool network-manager
+cat << EOF > $ROOTDIR/etc/resolv.conf
+nameserver 8.8.8.8
+EOF
 $CHROOTCMD apt-get -y --force-yes install python
 
 cat << EOF > $ROOTDIR/cleanup
