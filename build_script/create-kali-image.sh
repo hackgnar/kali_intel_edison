@@ -239,41 +239,41 @@ fi
   $CHROOTCMD dpkg -i /tmp/deb/all/bcm43340-fw_6.20.190-r2_all.deb
   $CHROOTCMD dpkg -i /tmp/deb/core2-32/bcm43340-bt_1.0-r0_i386.deb
 
-## Enables USB networking at startup
-#cat > $ROOTDIR/lib/systemd/network/usb0.network <<EOF
-#[Match]
-#Name=usb0
-#
-#[Network]
-#Address=192.168.2.15/24
-#EOF
-#$CHROOTCMD ln -s /lib/systemd/system/systemd-networkd.service /etc/systemd/system/multi-user.target.wants/
-#
-#
-## Provides fw_setenv/fw_printenv
-#$CHROOTCMD dpkg -i /tmp/deb/edison/u-boot-fw-utils_2014.04-1-r0_i386.deb
-#
-## First install script, probably not much needed for a debian
-#$CHROOTCMD dpkg -i /tmp/deb/core2-32/post-install_1.0-r0_i386.deb
-#
-## Add this service as it's not present on debian, but is required by the first-install script
-#cat > $ROOTDIR/lib/systemd/system/sshdgenkeys.service <<EOF
-#[Unit]
-#Description=OpenSSH Key Generation
-#[Service]
-#ExecStart=/bin/sh -c "if ! sshd -t &> /dev/null ; then rm /etc/ssh/*_key* ; ssh-keygen -A ; sync ; fi"
-#Type=oneshot
-#RemainAfterExit=yes
-#EOF
-#
-## Set up uboot env configuration
-#cat > $ROOTDIR/etc/fw_env.config <<EOF
-## MTD device name	Device offset	Env. size	Flash sector size	Number of sectors
-## On Edison, the u-boot environments are located on partitions 2 and 4 and both have a size of 64kB
-#/dev/mmcblk0p2		0x0000		0x10000
-#/dev/mmcblk0p4		0x0000		0x10000
-#EOF
-#
+# Enables USB networking at startup
+cat > $ROOTDIR/lib/systemd/network/usb0.network <<EOF
+[Match]
+Name=usb0
+
+[Network]
+Address=192.168.2.15/24
+EOF
+$CHROOTCMD ln -s /lib/systemd/system/systemd-networkd.service /etc/systemd/system/multi-user.target.wants/
+
+
+# Provides fw_setenv/fw_printenv
+$CHROOTCMD dpkg -i /tmp/deb/edison/u-boot-fw-utils_2014.04-1-r0_i386.deb
+
+# First install script, probably not much needed for a debian
+$CHROOTCMD dpkg -i /tmp/deb/core2-32/post-install_1.0-r0_i386.deb
+
+# Add this service as it's not present on debian, but is required by the first-install script
+cat > $ROOTDIR/lib/systemd/system/sshdgenkeys.service <<EOF
+[Unit]
+Description=OpenSSH Key Generation
+[Service]
+ExecStart=/bin/sh -c "if ! sshd -t &> /dev/null ; then rm /etc/ssh/*_key* ; ssh-keygen -A ; sync ; fi"
+Type=oneshot
+RemainAfterExit=yes
+EOF
+
+# Set up uboot env configuration
+cat > $ROOTDIR/etc/fw_env.config <<EOF
+# MTD device name	Device offset	Env. size	Flash sector size	Number of sectors
+# On Edison, the u-boot environments are located on partitions 2 and 4 and both have a size of 64kB
+/dev/mmcblk0p2		0x0000		0x10000
+/dev/mmcblk0p4		0x0000		0x10000
+EOF
+
 #if [ "$add_graphical_packages" == "true" ]; then
 #  # Add X.org, mesa, wayland and graphical stuff
 #  $CHROOTCMD apt-get -y --force-yes install xorg mesa-utils weston
@@ -288,16 +288,36 @@ fi
 #mv $ROOTDIR/etc/hosts.sav $ROOTDIR/etc/hosts.conf
 #echo "127.0.0.1       localhost.localdomain           edison" >> $ROOTDIR/etc/hosts
 #echo "edison" > $ROOTDIR/etc/hostname
-#echo "rootfs               /                    auto       nodev,noatime,discard,barrier=1,data=ordered,noauto_da_alloc    1  1" > $ROOTDIR/etc/fstab
-#echo "/dev/disk/by-partlabel/boot     /boot       auto    noauto,comment=systemd.automount,nosuid,nodev,noatime,discard     1   1" >> $ROOTDIR/etc/fstab
-#
+echo "rootfs               /                    auto       nodev,noatime,discard,barrier=1,data=ordered,noauto_da_alloc    1  1" > $ROOTDIR/etc/fstab
+echo "/dev/disk/by-partlabel/boot     /boot       auto    noauto,comment=systemd.automount,nosuid,nodev,noatime,discard     1   1" >> $ROOTDIR/etc/fstab
+
 ## Clean up
 #umount -l -f $ROOTDIR/sys
 ## Kill remaining processes making use of the /proc before unmounting it
 #lsof | grep $ROOTDIR/proc | awk '{print $2}' | xargs kill -9
 #umount -l -f $ROOTDIR/proc
-#rm -rf $ROOTDIR/tmp/deb
-#
+
+cat << EOF > $ROOTDIR/cleanup
+#!/bin/bash
+rm -rf /root/.bash_history
+apt-get update
+apt-get clean
+rm -f /0
+rm -f /hs_err*
+rm -f cleanup
+rm -f /usr/bin/qemu*
+EOF
+
+chmod +x $ROOTDIR/cleanup
+LANG=C chroot $ROOTDIR /cleanup
+
+rm -rf $ROOTDIR/tmp/deb
+
+umount $ROOTDIR/proc/sys/fs/binfmt_misc
+umount $ROOTDIR/dev/pts
+umount $ROOTDIR/dev/
+umount $ROOTDIR/proc
+
 ## Create the rootfs ext4 image
 #rm edison-image-edison.ext4
 #fsize=$((`stat --printf="%s" toFlash/edison-image-edison.ext4` / 524288))
@@ -316,21 +336,4 @@ fi
 ## Make sure that non-root users can read write the flash files
 ## This seems to fix a strange flashing issue in some cases
 #chmod -R a+rw toFlash
-cat << EOF > $ROOTDIR/cleanup
-#!/bin/bash
-rm -rf /root/.bash_history
-apt-get update
-apt-get clean
-rm -f /0
-rm -f /hs_err*
-rm -f cleanup
-rm -f /usr/bin/qemu*
-EOF
 
-chmod +x $ROOTDIR/cleanup
-LANG=C chroot $ROOTDIR /cleanup
-
-umount $ROOTDIR/proc/sys/fs/binfmt_misc
-umount $ROOTDIR/dev/pts
-umount $ROOTDIR/dev/
-umount $ROOTDIR/proc
