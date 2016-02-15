@@ -1,0 +1,54 @@
+---
+#ansible-playbook edison_make.yml -i 1.2.3.4, --ask-pass -u username
+- hosts: all
+  vars: 
+    build_dir: ~/src/edison
+    edison_src: edison-src-ww25.5-15.tgz
+    edison_src_url: http://downloadmirror.intel.com/25028/eng/edison-src-ww25.5-15.tgz
+    parallel: 8
+  tasks:
+
+  - name: Clean Up
+    shell: rm -rf {{ build_dir }}/edison-src
+
+  - name: Create Build Dir
+    file: path={{ build_dir }} state=directory mode=0755
+
+  - name: Install Dependancies
+    become: yes
+    become_method: sudo
+    apt: name={{ item }} update_cache=yes
+    with_items:
+      - build-essential
+      - git
+      - diffstat
+      - gawk
+      - chrpath
+      - texinfo
+      - libtool
+      - gcc-multilib
+      - debootstrap
+      - u-boot-tools
+      - dfu-util
+      - screen
+
+  - name: Download Edison Src
+    get_url: url={{ edison_src_url }} dest={{ build_dir }}
+
+  - name: Untar Edison Src
+    unarchive: src={{ build_dir }}/{{ edison_src }} dest={{ build_dir }}
+
+  - name: Setup Make
+    environment:
+      SETUP_ARGS: "--parallel_make={{ parallel }} --bb_number_thread={{ parallel }}"
+    shell: make setup
+    args:
+      chdir: "{{ build_dir }}/edison-src"
+
+  #- name: Make Debian Image
+  #  environment:
+  #    SETUP_ARGS: "--parallel_make={{ parallel }} --bb_number_thread={{ parallel }}"
+  #  shell: screen -L -d -m bash -c 'make debian_image; sleep 5; exec sh'
+  #  #shell: make debian_image
+  #  args:
+  #    chdir: "{{ build_dir }}/edison-src"
