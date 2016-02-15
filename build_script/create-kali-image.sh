@@ -319,10 +319,15 @@ umount $ROOTDIR/dev/
 umount -l -f $ROOTDIR/proc
 
 # Create the rootfs ext4 image
+ls $ROOTDIR
 rm edison-image-edison.ext4
+ls $ROOTDIR
 fsize=$((`stat --printf="%s" toFlash/edison-image-edison.ext4` / 524288))
+ls $ROOTDIR
 dd if=/dev/zero of=edison-image-edison.ext4 bs=512K count=$fsize
+ls $ROOTDIR
 mkfs.ext4 -F -L rootfs edison-image-edison.ext4
+ls $ROOTDIR
 
 # Copy the rootfs content in the ext4 image
 rm -rf tmpext4
@@ -331,6 +336,7 @@ mount -o loop edison-image-edison.ext4 tmpext4
 cp -a $ROOTDIR/* tmpext4/
 umount tmpext4
 rmdir tmpext4
+ls $ROOTDIR
 
 cp edison-image-edison.ext4 toFlash/
 # Make sure that non-root users can read write the flash files
