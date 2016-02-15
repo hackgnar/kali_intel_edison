@@ -93,6 +93,8 @@ if [ "$skip_debootstrap" != "true" ]; then
   debootstrap --arch i386 --no-check-gpg --foreign kali-rolling $ROOTDIR http://http.kali.org/kali
 fi
 
+LANG=C chroot $ROOTDIR /debootstrap/debootstrap --second-stage
+
 mkdir -p $ROOTDIR/home/root
 
 mount sysfs $ROOTDIR/sys -t sysfs
