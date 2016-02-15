@@ -143,13 +143,14 @@ echo -e "#!/bin/sh\nexit 101" > /usr/sbin/policy-rc.d
 chmod +x /usr/sbin/policy-rc.d
 
 apt-get update
-apt-get --yes --force-yes install locales-all
+#apt-get --yes --force-yes install locales-all
 
 debconf-set-selections /debconf.set
 rm -f /debconf.set
 apt-get update
 apt-get -y install git-core binutils ca-certificates initramfs-tools u-boot-tools
-apt-get -y install locales console-common less nano git
+#apt-get -y install locales console-common less vim-tiny git
+apt-get -y install console-common less vim-tiny git
 echo "root:toor" | chpasswd
 sed -i -e 's/KERNEL\!=\"eth\*|/KERNEL\!=\"/' /lib/udev/rules.d/75-persistent-net-generator.rules
 rm -f /etc/udev/rules.d/70-persistent-net.rules
