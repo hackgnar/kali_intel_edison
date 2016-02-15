@@ -168,6 +168,28 @@ EOF
 chmod +x $ROOTDIR/third-stage
 LANG=C chroot $ROOTDIR /third-stage
 
+## Backup config
+#cp $ROOTDIR/etc/environment $ROOTDIR/etc/environment.sav
+#cp $ROOTDIR/etc/resolv.conf $ROOTDIR/etc/resolv.conf.sav
+#cp $ROOTDIR/etc/hosts $ROOTDIR/etc/hosts.sav
+#
+## Use host system network config to be able to apt-get later on
+#echo `export | grep http_proxy  | sed 's/declare -x http_proxy=/Acquire::http::proxy /'`\;    >> $ROOTDIR/etc/apt/apt.conf.d/50proxy
+#echo `export | grep https_proxy | sed 's/declare -x https_proxy=/Acquire::https::proxy /'`\;  >> $ROOTDIR/etc/apt/apt.conf.d/50proxy
+#echo `export | grep HTTP_PROXY  | sed 's/declare -x HTTP_PROXY=/Acquire::http::proxy /'`\;    >> $ROOTDIR/etc/apt/apt.conf.d/50proxy
+#echo `export | grep HTTPS_PROXY | sed 's/declare -x HTTPS_PROXY=/Acquire::https::proxy /'`\;  >> $ROOTDIR/etc/apt/apt.conf.d/50proxy
+#cp /etc/resolv.conf $ROOTDIR/etc/resolv.conf
+#cp /etc/hosts $ROOTDIR/etc/hosts
+
+CHROOTCMD="eval LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTDIR"
+
+# Install necessary packages
+$CHROOTCMD apt-get clean
+$CHROOTCMD apt-get update
+$CHROOTCMD apt-get -y --force-yes install dbus nano openssh-server sudo bash-completion dosfstools
+$CHROOTCMD apt-get -y --force-yes install bluez hostapd file ethtool network-manager
+$CHROOTCMD apt-get -y --force-yes install python
+
 cat << EOF > $ROOTDIR/cleanup
 #!/bin/bash
 rm -rf /root/.bash_history
@@ -187,28 +209,7 @@ umount $ROOTDIR/dev/pts
 umount $ROOTDIR/dev/
 umount $ROOTDIR/proc
 
-## Backup config
-#cp $ROOTDIR/etc/environment $ROOTDIR/etc/environment.sav
-#cp $ROOTDIR/etc/resolv.conf $ROOTDIR/etc/resolv.conf.sav
-#cp $ROOTDIR/etc/hosts $ROOTDIR/etc/hosts.sav
-#
-## Use host system network config to be able to apt-get later on
-#echo `export | grep http_proxy  | sed 's/declare -x http_proxy=/Acquire::http::proxy /'`\;    >> $ROOTDIR/etc/apt/apt.conf.d/50proxy
-#echo `export | grep https_proxy | sed 's/declare -x https_proxy=/Acquire::https::proxy /'`\;  >> $ROOTDIR/etc/apt/apt.conf.d/50proxy
-#echo `export | grep HTTP_PROXY  | sed 's/declare -x HTTP_PROXY=/Acquire::http::proxy /'`\;    >> $ROOTDIR/etc/apt/apt.conf.d/50proxy
-#echo `export | grep HTTPS_PROXY | sed 's/declare -x HTTPS_PROXY=/Acquire::https::proxy /'`\;  >> $ROOTDIR/etc/apt/apt.conf.d/50proxy
-#cp /etc/resolv.conf $ROOTDIR/etc/resolv.conf
-#cp /etc/hosts $ROOTDIR/etc/hosts
 
-#CHROOTCMD="eval LC_ALL=C LANGUAGE=C LANG=C chroot $ROOTDIR"
-#
-## Install necessary packages
-#echo "CLEAN AND INSTALL"
-#$CHROOTCMD apt-get clean
-#$CHROOTCMD apt-get update
-#$CHROOTCMD apt-get -y --force-yes install dbus nano openssh-server sudo bash-completion dosfstools
-#$CHROOTCMD apt-get -y --force-yes install bluez hostapd file ethtool network-manager
-#$CHROOTCMD apt-get -y --force-yes install python
 
 ## This service is added by the network-manager debian package but we don't want it activated
 ## as it causes an UART console corruption at boot
