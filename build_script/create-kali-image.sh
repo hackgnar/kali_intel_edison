@@ -97,8 +97,13 @@ LANG=C chroot $ROOTDIR /debootstrap/debootstrap --second-stage
 
 mkdir -p $ROOTDIR/home/root
 
+export MALLOC_CHECK_=0 # workaround for LP: #520465
+export LC_ALL=C
+export DEBIAN_FRONTEND=noninteractive
+
 mount sysfs $ROOTDIR/sys -t sysfs
 mount proc $ROOTDIR/proc -t proc
+mount -o bind /dev/pts $ROOTDIR/dev/pts
 
 cat << EOF > $ROOTDIR/etc/network/interfaces
 auto lo
