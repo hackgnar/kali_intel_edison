@@ -168,7 +168,7 @@ EOF
 chmod +x $ROOTDIR/third-stage
 LANG=C chroot $ROOTDIR /third-stage
 
-cat << EOF > kali-$architecture/cleanup
+cat << EOF > $ROOTDIR/cleanup
 #!/bin/bash
 rm -rf /root/.bash_history
 apt-get update
@@ -178,6 +178,14 @@ rm -f /hs_err*
 rm -f cleanup
 rm -f /usr/bin/qemu*
 EOF
+
+chmod +x $ROOTDIR/cleanup
+LANG=C chroot $ROOTDIR /cleanup
+
+umount $ROOTDIR/proc/sys/fs/binfmt_misc
+umount $ROOTDIR/dev/pts
+umount $ROOTDIR/dev/
+umount $ROOTDIR/proc
 
 ## Backup config
 #cp $ROOTDIR/etc/environment $ROOTDIR/etc/environment.sav
