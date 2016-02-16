@@ -8,6 +8,9 @@
     parallel: 8
   tasks:
 
+  # TODO: insert command to spin this up in ec2
+
+  # TODO: make this optional
   - name: Clean Up
     shell: rm -rf {{ build_dir }}/edison-src
 
@@ -38,6 +41,26 @@
   - name: Untar Edison Src
     unarchive: src={{ build_dir }}/{{ edison_src }} dest={{ build_dir }}
 
+  # TODO: insert command to expand base image size
+  - name: Change base edison image rootfs size
+    shell: sed -i -e 's/524288/1400000/' {{ build_dir }}/edison-src/meta-intel-edison/meta-intel-edison-distro/recipes-core/images/edison-image.bb
+
+  # TODO: insert command to git pull kali addon
+  - name: Pull kali extentions from github
+    git: repo=https://github.com/hackgnar/kali_intel_edison.git dest={{ build_dir }}/kali_intel_edison clone=yes
+
+  # TODO: insert commands to copy kali files to correct locations
+  - name: Copy kali build script
+    copy: remote_src=True src={{ build_dir }}/kali_intel_edison/build_script/create-kali-image.sh dest={{ build_dir }}/edison-src/meta-intel-edison/utils/create-kali-image.sh mode=755
+
+  - name: Copy kali debootstrap file
+    copy: remote_src=True src={{ build_dir }}/kali_intel_edison/debootstrap_scripts/kali-rolling dest=/tmp/kali-rolling
+
+  - name: Copy kali debootstrap file
+    become: yes
+    become_method: sudo
+    copy: remote_src=True src=/tmp/kali-rolling dest=/usr/share/debootstrap/scripts/kali-rolling mode=644 owner=root group=root
+  
   - name: Setup Make
     environment:
       SETUP_ARGS: "--parallel_make={{ parallel }} --bb_number_thread={{ parallel }}"
@@ -45,10 +68,10 @@
     args:
       chdir: "{{ build_dir }}/edison-src"
 
-  #- name: Make Debian Image
-  #  environment:
-  #    SETUP_ARGS: "--parallel_make={{ parallel }} --bb_number_thread={{ parallel }}"
-  #  shell: screen -L -d -m bash -c 'make debian_image; sleep 5; exec sh'
-  #  #shell: make debian_image
-  #  args:
-  #    chdir: "{{ build_dir }}/edison-src"
+  - name: Make Debian Image
+    environment:
+      SETUP_ARGS: "--parallel_make={{ parallel }} --bb_number_thread={{ parallel }}"
+    shell: screen -L -d -m bash -c 'make debian_image; sleep 5; exec sh'
+    #shell: make debian_image
+    args:
+      chdir: "{{ build_dir }}/edison-src"
