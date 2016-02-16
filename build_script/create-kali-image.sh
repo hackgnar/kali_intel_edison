@@ -291,6 +291,7 @@ EOF
 #echo "edison" > $ROOTDIR/etc/hostname
 echo "rootfs               /                    auto       nodev,noatime,discard,barrier=1,data=ordered,noauto_da_alloc    1  1" > $ROOTDIR/etc/fstab
 echo "/dev/disk/by-partlabel/boot     /boot       auto    noauto,comment=systemd.automount,nosuid,nodev,noatime,discard     1   1" >> $ROOTDIR/etc/fstab
+echo "/dev/disk/by-partlabel/home     /home       auto    noauto,comment=systemd.automount,nosuid,nodev,noatime,discard,barrier=1,data=ordered,noauto_da_alloc     1   1" >> $ROOTDIR/etc/fstab
 
 ## Clean up
 ## Kill remaining processes making use of the /proc before unmounting it
