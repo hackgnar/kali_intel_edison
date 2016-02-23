@@ -5,7 +5,7 @@
     build_dir: ~/src/edison
     edison_src: edison-src-ww25.5-15.tgz
     edison_src_url: http://downloadmirror.intel.com/25028/eng/edison-src-ww25.5-15.tgz
-    parallel: 8
+    parallel: 40
   tasks:
 
   # TODO: insert command to spin this up in ec2
